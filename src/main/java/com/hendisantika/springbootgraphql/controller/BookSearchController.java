@@ -98,4 +98,10 @@ public class BookSearchController {
     public Book getBookInfo(@PathVariable String movieId) {
         return service.findBookById(movieId);
     }
+
+    @PostMapping("/getBookById")
+    public ResponseEntity<Object> getBookById(@RequestBody String query) {
+        ExecutionResult result = graphQL.execute(query);
+        return new ResponseEntity<Object>(result, HttpStatus.OK);
+    }
 }
