@@ -2,7 +2,9 @@ package com.hendisantika.springbootgraphql.controller;
 
 import com.hendisantika.springbootgraphql.datafetcher.AllBookDataFetcher;
 import com.hendisantika.springbootgraphql.datafetcher.BookDataFetcher;
+import com.hendisantika.springbootgraphql.entity.Book;
 import com.hendisantika.springbootgraphql.service.BookService;
+import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -12,12 +14,14 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -67,5 +71,25 @@ public class BookSearchController {
          */
         return RuntimeWiring.newRuntimeWiring().type("Query", typeWiring -> typeWiring
                 .dataFetcher("allBooks", allBookDataFetcher).dataFetcher("book", bookDataFetcher)).build();
+    }
+
+    @GetMapping("/booksList")
+    public List<Book> getBooksList() {
+        return service.findAllBooks();
+    }
+
+    /*
+     * In PostMan use Post URL: localhost:8080/bookstore/getAllBooks
+     * and Body: query{
+                      allBooks{
+                    bookId,
+                    bookName
+                      }
+                }
+     */
+    @PostMapping("/getAllBooks")
+    public ResponseEntity<Object> getAllBooks(@RequestBody String query) {
+        ExecutionResult result = graphQL.execute(query);
+        return new ResponseEntity<Object>(result, HttpStatus.OK);
     }
 }
