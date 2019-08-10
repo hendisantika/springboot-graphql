@@ -4,11 +4,20 @@ import com.hendisantika.springbootgraphql.datafetcher.AllBookDataFetcher;
 import com.hendisantika.springbootgraphql.datafetcher.BookDataFetcher;
 import com.hendisantika.springbootgraphql.service.BookService;
 import graphql.GraphQL;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.TypeDefinitionRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,4 +44,28 @@ public class BookSearchController {
     private BookDataFetcher bookDataFetcher;
 
     private GraphQL graphQL;
+
+    // load schema at application start up
+    @PostConstruct
+    public void loadSchema() throws IOException {
+        // get the schema
+        File schemaFile = schemaResource.getFile();
+        // parse schema
+        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schemaFile);
+        RuntimeWiring wiring = buildRuntimeWiring();
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring);
+        graphQL = GraphQL.newGraphQL(schema).build();
+    }
+
+    private RuntimeWiring buildRuntimeWiring() {
+        /*
+         * This dataFetcher first argument i.e "allMovies" or "movie" this name
+         * should be same with the field which u declare in your movie.graphqls
+         * in typeQuery section and one more things these 2 field name should be
+         * same which we are sending as part of request query from postman for
+         * Example : { allMovies{pass required field } }
+         */
+        return RuntimeWiring.newRuntimeWiring().type("Query", typeWiring -> typeWiring
+                .dataFetcher("allBooks", allBookDataFetcher).dataFetcher("book", bookDataFetcher)).build();
+    }
 }
